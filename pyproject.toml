@@ -1,0 +1,32 @@
+[project]
+name = "voting-simulator-zkp"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Jakub Bogacz",email = "jakubbogacz05@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi (>=0.136.3,<0.137.0)",
+    "uvicorn[standard] (>=0.49.0,<0.50.0)",
+    "sqlalchemy (>=2.0.50,<3.0.0)",
+    "pydantic (>=2.13.4,<3.0.0)",
+    "pydantic-settings (>=2.14.1,<3.0.0)",
+    "jinja2 (>=3.1.6,<4.0.0)",
+    "python-multipart (>=0.0.32,<0.0.33)",
+    "httpx (>=0.28.1,<0.29.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.3,<10.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
