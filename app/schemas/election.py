@@ -28,6 +28,5 @@ class ElectionRead(BaseModel):
 class ElectionUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     description: str | None = None
-    status: ElectionStatus | None = None
     starts_at: datetime | None = None
     ends_at: datetime | None = None
