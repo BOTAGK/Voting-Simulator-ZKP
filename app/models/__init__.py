@@ -1,6 +1,9 @@
-﻿from app.models.candidate import Candidate
-from app.models.election import Election
-from app.models.vote import Vote
-from app.models.voter_token import VoterToken
+from app.models.models import Candidate, Election, ElectionStatus, Vote, VoterToken
 
-__all__ = ["Candidate", "Election", "Vote", "VoterToken"]
+__all__ = [
+    "Candidate",
+    "Election",
+    "ElectionStatus",
+    "Vote",
+    "VoterToken",
+]

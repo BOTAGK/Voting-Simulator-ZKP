@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ElectionNotFoundError, InvalidElectionStatusError
-from app.models.election import Election, ElectionStatus
+from app.models import Election, ElectionStatus
 from app.repositories import election_repository
 
 

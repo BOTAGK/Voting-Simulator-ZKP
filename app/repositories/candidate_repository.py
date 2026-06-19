@@ -3,7 +3,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.candidate import Candidate
+from app.models import Candidate
 from app.schemas.candidate import CandidateCreate, CandidateUpdate
 
 def create_candidate(db: Session, data: CandidateCreate, election_id: int) -> Candidate:

@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.election import ElectionStatus
+from app.models import ElectionStatus
 
 
 class ElectionCreate(BaseModel):

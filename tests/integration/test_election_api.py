@@ -6,7 +6,7 @@ from typing import Any
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.models.election import Election
+from app.models import Election
 
 
 ElectionPayload = dict[str, Any]

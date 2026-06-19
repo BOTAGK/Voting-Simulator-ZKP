@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import CandidateNotFoundError
-from app.models.candidate import Candidate
-from app.models.election import Election
+from app.models import Candidate, Election
 from app.repositories import candidate_repository
 from app.schemas.candidate import CandidateCreate, CandidateUpdate
 from app.services.common import ensure_election_is_draft, get_existing_election
