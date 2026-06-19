@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.auth.permissions import require_admin
 from app.core.deps import get_db
-from app.models.candidate import Candidate
-from app.models.election import Election
+from app.models import Candidate, Election, VoterToken
 from app.schemas.candidate import CandidateCreate, CandidateRead, CandidateUpdate
 from app.schemas.election import ElectionCreate, ElectionRead, ElectionUpdate
-from app.services import election_service, candidate_service
+from app.schemas.voter_token import VoterTokenPackage, VoterTokenGenerateRequest, VoterTokenRead
+from app.services import election_service, candidate_service, token_service
 
 
 router = APIRouter(
@@ -145,3 +145,25 @@ def delete_candidate_for_election(
 ) -> Response:
     candidate_service.delete_candidate(db, election_id, candidate_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post(
+    "/{election_id}/tokens/generate",
+    response_model=list[VoterTokenPackage],
+    status_code=status.HTTP_201_CREATED,
+)
+def generate_voter_tokens_for_election(
+    election_id: int,
+    data: VoterTokenGenerateRequest,
+    db: Session = Depends(get_db),
+) -> list[VoterTokenPackage]:
+    return token_service.generate_voter_tokens(db, election_id, data)
+
+@router.get(
+    "/{election_id}/tokens",
+    response_model=list[VoterTokenRead],
+)
+def list_voter_tokens_for_election(
+    election_id: int,
+    db: Session = Depends(get_db),
+) -> list[VoterToken]:
+    return token_service.list_voter_tokens_for_election(db, election_id)

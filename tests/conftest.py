@@ -1,6 +1,6 @@
-﻿"""Shared pytest fixtures using an isolated in-memory SQLite database."""
+"""Shared pytest fixtures using an isolated in-memory SQLite database."""
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
 import pytest
 from fastapi import FastAPI
@@ -9,16 +9,32 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.config import get_settings
 import app.models  # noqa: F401
+import app.services.token_service as token_service
+from app.core.config import get_settings
 from app.core.database import Base
 from app.core.deps import get_db
 from app.main import create_app
+from app.models import Election, ElectionStatus
+from app.zkp.merkle import MerkleProof
+
+
+class FakeMerkleTree:
+    def __init__(self, leaves: list[int]) -> None:
+        self.leaves = leaves
+        self.root = 999_999
+
+    def get_proof(self, leaf_index: int) -> MerkleProof:
+        return MerkleProof(
+            siblings=[10_000 + leaf_index, 20_000 + leaf_index],
+            path_indices=[0, 1],
+        )
+
 
 @pytest.fixture
 def admin_client(client: TestClient) -> TestClient:
     settings = get_settings()
-    
+
     response = client.post(
         "/api/auth/login",
         json={
@@ -29,6 +45,23 @@ def admin_client(client: TestClient) -> TestClient:
 
     assert response.status_code == 200
     return client
+
+
+@pytest.fixture
+def fast_token_generation(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    monkeypatch.setattr(
+        token_service,
+        "generate_token_secrets",
+        lambda count: list(range(101, 101 + count)),
+    )
+    monkeypatch.setattr(
+        token_service,
+        "hash_token_secrets",
+        lambda token_secrets: [secret + 1_000 for secret in token_secrets],
+    )
+    monkeypatch.setattr(token_service, "MerkleTree", FakeMerkleTree)
+    yield
+
 
 @pytest.fixture
 def test_session_factory() -> Generator[sessionmaker[Session], None, None]:
@@ -48,6 +81,36 @@ def test_session_factory() -> Generator[sessionmaker[Session], None, None]:
     yield session_factory
     Base.metadata.drop_all(bind=engine)
     engine.dispose()
+
+
+@pytest.fixture
+def db_session(test_session_factory: sessionmaker[Session]) -> Generator[Session, None, None]:
+    session = test_session_factory()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def create_db_election(
+    db_session: Session,
+) -> Callable[[ElectionStatus], Election]:
+    def _create_election(
+        status: ElectionStatus = ElectionStatus.DRAFT,
+    ) -> Election:
+        election = Election(
+            name="Token test election",
+            description="Election used by token service tests.",
+            status=status,
+        )
+        db_session.add(election)
+        db_session.commit()
+        db_session.refresh(election)
+
+        return election
+
+    return _create_election
 
 
 @pytest.fixture
