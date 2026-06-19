@@ -8,7 +8,7 @@ from app.auth.session import (
     get_admin_from_session,
     is_admin_authenticated,
 )
-from app.schemas.auth import AdminLog, AdminRead
+from app.schemas.auth import AdminLogin, AdminRead
 
 
 
@@ -22,7 +22,7 @@ router = APIRouter(
     response_model =  AdminRead, 
 )
 def login_admin(
-    data: AdminLog,
+    data: AdminLogin,
     request: Request,
 ) -> AdminRead:
     current_admin = get_admin_from_session(request)
