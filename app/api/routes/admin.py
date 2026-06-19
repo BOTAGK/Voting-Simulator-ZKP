@@ -7,8 +7,9 @@ from app.core.deps import get_db
 from app.models import Candidate, Election, VoterToken
 from app.schemas.candidate import CandidateCreate, CandidateRead, CandidateUpdate
 from app.schemas.election import ElectionCreate, ElectionRead, ElectionUpdate
+from app.schemas.results import ElectionResultsRead
 from app.schemas.voter_token import VoterTokenPackage, VoterTokenGenerateRequest, VoterTokenRead
-from app.services import election_service, candidate_service, token_service
+from app.services import election_service, candidate_service, tally_service, token_service
 
 
 router = APIRouter(
@@ -167,3 +168,14 @@ def list_voter_tokens_for_election(
     db: Session = Depends(get_db),
 ) -> list[VoterToken]:
     return token_service.list_voter_tokens_for_election(db, election_id)
+
+
+@router.get(
+    "/{election_id}/results",
+    response_model=ElectionResultsRead,
+)
+def get_election_results_for_admin(
+    election_id: int,
+    db: Session = Depends(get_db),
+) -> ElectionResultsRead:
+    return tally_service.get_election_results(db, election_id)
