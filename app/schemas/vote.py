@@ -1,13 +1,16 @@
-﻿from datetime import datetime
+from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.zkp.proof_models import PublicSignals
 
 
 class VoteCreate(BaseModel):
     candidate_id: int
     nullifier_hash: str = Field(min_length=1, max_length=255)
-    proof_json: str = Field(min_length=1)
-    public_signals_json: str = Field(min_length=1)
+    proof: dict[str, Any]
+    public_signals: PublicSignals
 
 
 class VoteRead(BaseModel):

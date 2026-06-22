@@ -1,16 +1,36 @@
-﻿from sqlalchemy import func, select
+import json
+
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
+from app.core.exceptions import DuplicateNullifierError
 from app.models import Vote
 from app.schemas.vote import VoteCreate
 
+
 def create_vote(db: Session, election_id: int, data: VoteCreate) -> Vote:
-    vote: Vote = Vote(election_id=election_id, **data.model_dump())
+    vote = Vote(
+        election_id=election_id,
+        candidate_id=data.candidate_id,
+        nullifier_hash=data.nullifier_hash,
+        proof_json=json.dumps(data.proof),
+        public_signals_json=data.public_signals.model_dump_json(),
+    )
 
     db.add(vote)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise DuplicateNullifierError(
+            "This voter has already voted in this election."
+        ) from exc
+
     db.refresh(vote)
 
     return vote
+
 
 def list_votes_by_election(db: Session, election_id: int) -> list[Vote]:
     statement = (
@@ -21,13 +41,15 @@ def list_votes_by_election(db: Session, election_id: int) -> list[Vote]:
 
     return list(db.scalars(statement).all())
 
+
 def get_vote_by_id(db: Session, vote_id: int) -> Vote | None:
     return db.get(Vote, vote_id)
 
+
 def get_vote_by_nullifier_hash(
-    db: Session, 
-    election_id: int, 
-    nullifier_hash: str
+    db: Session,
+    election_id: int,
+    nullifier_hash: str,
 ) -> Vote | None:
     statement = (
         select(Vote)
@@ -38,6 +60,7 @@ def get_vote_by_nullifier_hash(
     )
 
     return db.scalars(statement).first()
+
 
 def count_votes_by_candidate(db: Session, election_id: int) -> dict[int, int]:
     statement = (
