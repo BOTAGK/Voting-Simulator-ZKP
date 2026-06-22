@@ -1,6 +1,8 @@
-﻿from sqlalchemy import select
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import DuplicateVoterTokenError
 from app.models import VoterToken
 
 
@@ -21,7 +23,15 @@ def create_voter_token(
     )
 
     db.add(voter_token)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise DuplicateVoterTokenError(
+            "Voter token hash already exists in this election."
+        ) from exc
+
     db.refresh(voter_token)
 
     return voter_token
@@ -32,7 +42,14 @@ def bulk_create_voter_tokens(
     voter_tokens: list[VoterToken],
 ) -> list[VoterToken]:
     db.add_all(voter_tokens)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise DuplicateVoterTokenError(
+            "Voter token hash already exists in this election."
+        ) from exc
 
     for voter_token in voter_tokens:
         db.refresh(voter_token)
@@ -68,10 +85,11 @@ def delete_voter_tokens_by_election(db: Session, election_id: int) -> None:
 
     db.commit()
 
+
 def get_voter_token_by_hash(
-    db: Session, 
-    election_id: int, 
-    token_hash: str
+    db: Session,
+    election_id: int,
+    token_hash: str,
 ) -> VoterToken | None:
     statement = (
         select(VoterToken)
