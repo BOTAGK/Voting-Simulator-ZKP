@@ -7,9 +7,10 @@ from app.core.exceptions import (
     InvalidElectionDatesError,
     InvalidElectionStatusError,
 )
-from app.models.election import Election, ElectionStatus
+from app.models import Election, ElectionStatus
 from app.repositories import election_repository
 from app.schemas.election import ElectionCreate, ElectionUpdate
+from app.utils.time import is_within_datetime_window
 
 
 def validate_election_dates(
@@ -18,6 +19,13 @@ def validate_election_dates(
 ) -> None:
     if starts_at is not None and ends_at is not None and ends_at <= starts_at:
         raise InvalidElectionDatesError("Election end date must be after start date.")
+
+
+def ensure_election_can_be_active(election: Election) -> None:
+    if not is_within_datetime_window(election.starts_at, election.ends_at):
+        raise InvalidElectionStatusError(
+            "Election can only be active between its start and end dates."
+        )
 
 
 def create_new_election(db: Session, data: ElectionCreate) -> Election:
@@ -39,7 +47,6 @@ def get_election_details(db: Session, election_id: int) -> Election:
 
     return election
 
-
 def update_existing_election(
     db: Session, election_id: int, data: ElectionUpdate
 ) -> Election:
@@ -59,9 +66,6 @@ def update_existing_election(
 def delete_existing_election(db: Session, election_id: int) -> None:
     election = get_election_details(db, election_id)
 
-    if election.status == ElectionStatus.ACTIVE:
-        raise InvalidElectionStatusError("Active election cannot be deleted.")
-
     election_repository.delete_election(db, election)
 
 
@@ -72,19 +76,31 @@ def open_election(db: Session, election_id: int) -> Election:
         raise InvalidElectionStatusError("Only draft election can be opened.")
 
     validate_election_dates(election.starts_at, election.ends_at)
+    ensure_election_can_be_active(election)
 
     election.status = ElectionStatus.ACTIVE
     db.commit()
     db.refresh(election)
 
     return election
-
-
 def close_election(db: Session, election_id: int) -> Election:
     election = get_election_details(db, election_id)
 
     if election.status != ElectionStatus.ACTIVE:
         raise InvalidElectionStatusError("Only active election can be closed.")
+
+    election.status = ElectionStatus.CLOSED
+    db.commit()
+    db.refresh(election)
+
+    return election
+
+
+def cancel_draft_election(db: Session, election_id: int) -> Election:
+    election = get_election_details(db, election_id)
+
+    if election.status != ElectionStatus.DRAFT:
+        raise InvalidElectionStatusError("Only draft election can be cancelled.")
 
     election.status = ElectionStatus.CLOSED
     db.commit()

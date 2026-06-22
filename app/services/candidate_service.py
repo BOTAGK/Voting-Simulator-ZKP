@@ -5,6 +5,7 @@ from app.models import Candidate, Election
 from app.repositories import candidate_repository
 from app.schemas.candidate import CandidateCreate, CandidateUpdate
 from app.services.common import ensure_election_is_draft, get_existing_election
+from app.utils.csv import parse_candidates_csv
 
 
 def add_candidate_to_election(
@@ -63,3 +64,18 @@ def delete_candidate(
     candidate: Candidate = get_candidate_details(db, election_id, candidate_id)
 
     candidate_repository.delete_candidate(db, candidate)
+
+
+def import_candidates_from_csv(
+    db: Session,
+    election_id: int,
+    file_content: bytes,
+) -> list[Candidate]:
+    election: Election = get_existing_election(db, election_id)
+    ensure_election_is_draft(election)
+    candidate_data: list[CandidateCreate] = parse_candidates_csv(file_content)
+
+    return [
+        candidate_repository.create_candidate(db, candidate, election_id)
+        for candidate in candidate_data
+    ]

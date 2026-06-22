@@ -2,7 +2,7 @@
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.models.election import Election
+from app.models import Election, ElectionStatus
 from app.schemas.election import ElectionCreate, ElectionUpdate
 
 
@@ -41,3 +41,25 @@ def update_election(
 def delete_election(db: Session, election: Election) -> None:
     db.delete(election)
     db.commit()
+
+def list_elections_by_status(db: Session, status: str) -> list[Election]:
+    statement = (
+        select(Election)
+        .where(Election.status == status)
+        .order_by(Election.created_at.desc())
+    )
+
+    return list(db.scalars(statement).all())
+
+def list_active_elections(db: Session) -> list[Election]:
+    return list_elections_by_status(db, ElectionStatus.ACTIVE)
+
+def get_election_by_id_and_status(
+    db: Session, election_id: int, status: str
+) -> Election | None:
+    statement = (
+        select(Election)
+        .where(Election.id == election_id, Election.status == status)
+    )
+
+    return db.scalars(statement).first()
