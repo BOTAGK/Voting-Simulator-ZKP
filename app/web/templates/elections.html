@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Elections - ZKP Voting Simulator{% endblock %}
+{% block content %}
+<section class="section-heading">
+  <div>
+    <p class="eyebrow">Voter</p>
+    <h1>Active elections</h1>
+  </div>
+  <span class="count-badge">{{ elections|length }}</span>
+</section>
+
+{% if elections %}
+  <section class="list-grid">
+    {% for election in elections %}
+      <article class="item-card">
+        <div>
+          <h2>{{ election.name }}</h2>
+          {% if election.description %}
+            <p>{{ election.description }}</p>
+          {% endif %}
+        </div>
+        <dl class="meta-list">
+          <div>
+            <dt>Start</dt>
+            <dd>{{ election.starts_at or "not set" }}</dd>
+          </div>
+          <div>
+            <dt>End</dt>
+            <dd>{{ election.ends_at or "not set" }}</dd>
+          </div>
+        </dl>
+        <a class="button primary" href="/elections/{{ election.id }}">Open</a>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty-state">
+    <h2>No active elections</h2>
+    <p>No voting is currently available in the public view.</p>
+  </section>
+{% endif %}
+{% endblock %}

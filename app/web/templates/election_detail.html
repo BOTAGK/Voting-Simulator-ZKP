@@ -1,0 +1,47 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ election.name }} - ZKP Voting Simulator{% endblock %}
+{% block content %}
+<section class="split-layout">
+  <article class="panel">
+    <p class="eyebrow">Voting</p>
+    <h1>{{ election.name }}</h1>
+    {% if election.description %}
+      <p class="muted">{{ election.description }}</p>
+    {% endif %}
+
+    <div class="candidate-list">
+      {% for candidate in candidates %}
+        <label class="candidate-row">
+          <input type="radio" name="candidate_id" value="{{ candidate.id }}">
+          <span>
+            <strong>{{ candidate.name }}</strong>
+            {% if candidate.description %}
+              <small>{{ candidate.description }}</small>
+            {% endif %}
+          </span>
+        </label>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="panel">
+    <p class="eyebrow">ZKP</p>
+    <h2>Cast vote</h2>
+
+    <div class="empty-state" id="vote-package-required" hidden>
+      <h2>Load voter package</h2>
+      <p class="muted">Voting requires a token package assigned to this election.</p>
+      <a class="button primary" href="/voter">Go to voter entry</a>
+    </div>
+
+    <form id="vote-payload-form" data-election-id="{{ election.id }}" class="stack-form">
+      <p class="muted">Select a candidate. The ZKP proof will be generated locally in this browser, and only the proof and public signals will be sent to the server.</p>
+      <button class="button primary" type="submit">Cast vote</button>
+      <p class="form-message" data-form-message></p>
+    </form>
+  </article>
+</section>
+{% endblock %}
+{% block scripts %}
+  <script src="/vendor/snarkjs.min.js"></script>
+{% endblock %}

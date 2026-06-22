@@ -216,3 +216,27 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project runtime files
+*.db
+*.sqlite
+*.sqlite3
+zkp_artifacts/*
+!zkp_artifacts/.gitkeep
+.git
+.venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+data/*
+!data/.gitkeep
+zkp_artifacts/*
+!zkp_artifacts/.gitkeep
+output/
+
+# Node.js
+node_modules/
+npm-debug.log*

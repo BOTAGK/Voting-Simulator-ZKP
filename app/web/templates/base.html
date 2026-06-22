@@ -1,0 +1,46 @@
+﻿<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ZKP Voting Simulator{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=6">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">Z</span>
+        <span>ZKP Voting</span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        {% if is_admin %}
+          <a href="/admin" class="{% if active_nav == 'admin' %}active{% endif %}">Admin</a>
+        {% else %}
+          <a href="/voter" class="{% if active_nav == 'voter' %}active{% endif %}">Voter</a>
+          <a href="/elections" class="{% if active_nav == 'elections' %}active{% endif %}">Elections</a>
+          <a href="/results" class="{% if active_nav == 'results' %}active{% endif %}">Results</a>
+        {% endif %}
+      </nav>
+      <div class="session-actions">
+        {% if is_admin %}
+          <span class="session-chip">{{ admin_username }}</span>
+          <form class="logout-form" action="/admin/logout" method="post">
+            <button class="button ghost" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <span class="session-chip">Voter</span>
+          <button class="button ghost" id="voter-clear-button" type="button" hidden>
+            Log out
+          </button>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="page-shell">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+    <script type="module" src="/static/js/app.js?v=7"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "voting-simulator-zkp",
+  "version": "1.0.0",
+  "description": "Educational voting simulator built with Python, FastAPI, SQLite and Circom/snarkjs.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BOTAGK/Voting-Simulator-ZKP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/BOTAGK/Voting-Simulator-ZKP/issues"
+  },
+  "homepage": "https://github.com/BOTAGK/Voting-Simulator-ZKP#readme",
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
+    "snarkjs": "^0.7.5"
+  }
+}
