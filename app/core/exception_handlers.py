@@ -3,7 +3,12 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import (
+    ConflictError,
+    NotFoundError,
+    ServiceUnavailableError,
+    ValidationError,
+)
 
 
 async def not_found_error_handler(
@@ -26,7 +31,31 @@ async def validation_error_handler(
     )
 
 
+async def conflict_error_handler(
+    _request: Request,
+    exc: ConflictError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": str(exc)},
+    )
+
+
+async def service_unavailable_error_handler(
+    _request: Request,
+    exc: ServiceUnavailableError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": str(exc)},
+    )
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(NotFoundError, not_found_error_handler)
     app.add_exception_handler(ValidationError, validation_error_handler)
-
+    app.add_exception_handler(ConflictError, conflict_error_handler)
+    app.add_exception_handler(
+        ServiceUnavailableError,
+        service_unavailable_error_handler,
+    )
