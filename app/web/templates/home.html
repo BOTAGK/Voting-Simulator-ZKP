@@ -1,0 +1,53 @@
+﻿{% extends "base.html" %}
+{% block title %}Voter Entry - ZKP Voting Simulator{% endblock %}
+{% block content %}
+<section class="voter-entry-layout">
+  <article class="panel voter-entry-panel">
+    <p class="eyebrow">Voter entry</p>
+    <h1>Load voter package</h1>
+    <p class="muted">Paste a JSON package or choose a token package file.</p>
+
+    <form id="voter-package-form" class="stack-form">
+      <label for="voter-package-file">Plik JSON</label>
+      <input class="file-input" id="voter-package-file" type="file" accept=".json,application/json">
+
+      <label for="voter-package-json">Voter package</label>
+      <textarea
+        id="voter-package-json"
+        rows="12"
+        spellcheck="false"
+        placeholder='{"election_id": 1, "token_secret": "...", "merkle_root": "...", "merkle_index": 0, "merkle_proof": {"siblings": [], "path_indices": []}}'
+      ></textarea>
+
+      <div class="form-actions">
+        <button class="button primary" type="submit">Load package</button>
+        <button class="button ghost" id="voter-entry-clear-button" type="button">Clear</button>
+      </div>
+      <p class="form-message" data-form-message></p>
+    </form>
+  </article>
+
+  <aside class="panel voter-status" id="voter-package-status" hidden>
+    <p class="eyebrow">Status</p>
+    <h2>Voter package loaded</h2>
+    <dl class="meta-list">
+      <div>
+        <dt>Election ID</dt>
+        <dd data-voter-election-id>-</dd>
+      </div>
+      <div>
+        <dt>Indeks tokenu</dt>
+        <dd data-voter-token-index>-</dd>
+      </div>
+    </dl>
+    <a class="button primary" id="voter-start-voting-link" href="/elections">Go to voting</a>
+  </aside>
+
+  <aside class="panel">
+    <p class="eyebrow">Public results</p>
+    <h2>Closed elections</h2>
+    <p class="muted">Results are available after voting is closed.</p>
+    <a class="button ghost" href="/results">Zobacz wyniki</a>
+  </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Admin panel - ZKP Voting Simulator{% endblock %}
+{% block content %}
+<section class="section-heading">
+  <div>
+    <p class="eyebrow">Administrator</p>
+    <h1>Election dashboard</h1>
+  </div>
+  <a class="button ghost" href="/docs">API docs</a>
+</section>
+
+<section class="admin-workspace">
+  <article class="panel">
+    <h2>New election</h2>
+    <form id="create-election-form" class="stack-form">
+      <label for="election-name">Name</label>
+      <input id="election-name" name="name" type="text" maxlength="120" required>
+
+      <label for="election-description">Description</label>
+      <textarea id="election-description" name="description" rows="4"></textarea>
+
+      <label for="starts-at">Start</label>
+      <input id="starts-at" name="starts_at" type="datetime-local">
+
+      <label for="ends-at">End</label>
+      <input id="ends-at" name="ends_at" type="datetime-local">
+
+      <button class="button primary" type="submit">Create</button>
+      <p class="form-message" data-form-message></p>
+    </form>
+  </article>
+
+  <article class="panel">
+    <h2>Elections</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for election in elections %}
+          <tr data-election-row="{{ election.id }}">
+            <td>{{ election.name }}</td>
+            <td><span class="status-pill">{{ election.status.value }}</span></td>
+            <td>{{ election.starts_at or "not set" }}</td>
+            <td>{{ election.ends_at or "not set" }}</td>
+            <td>
+              <button
+                class="button ghost compact"
+                type="button"
+                data-admin-action="select-election"
+                data-election-id="{{ election.id }}"
+              >
+                Manage
+              </button>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5">No elections.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </article>
+</section>
+
+<section class="panel admin-election-panel" id="admin-election-panel" hidden>
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Selected election</p>
+      <h2 data-admin-election-name>-</h2>
+      <p class="muted" data-admin-election-description></p>
+    </div>
+    <span class="status-pill" data-admin-election-status>-</span>
+  </div>
+
+  <form id="admin-election-update-form" class="stack-form compact-form">
+    <label for="admin-election-name">Name</label>
+    <input id="admin-election-name" name="name" type="text" maxlength="120" required>
+
+    <label for="admin-election-description">Description</label>
+    <textarea id="admin-election-description" name="description" rows="3"></textarea>
+
+    <label for="admin-election-starts-at">Start</label>
+    <input id="admin-election-starts-at" name="starts_at" type="datetime-local">
+
+    <label for="admin-election-ends-at">End</label>
+    <input id="admin-election-ends-at" name="ends_at" type="datetime-local">
+
+    <button class="button primary" type="submit">Save draft changes</button>
+    <p class="form-message" data-form-message></p>
+  </form>
+
+  <div class="admin-actions">
+    <button class="button primary" type="button" data-admin-action="open-election">Open</button>
+    <button class="button ghost" type="button" data-admin-action="cancel-election" hidden>Cancel</button>
+    <button class="button ghost" type="button" data-admin-action="close-election">Close</button>
+    <button class="button ghost" type="button" data-admin-action="delete-election">Delete</button>
+    <button class="button ghost" type="button" data-admin-action="load-results">Results</button>
+    <button class="button ghost" type="button" data-admin-action="download-results-csv">Export results CSV</button>
+  </div>
+
+  <p class="form-message" id="admin-election-message"></p>
+
+  <div class="admin-detail-grid">
+    <article>
+      <h2>Candidates</h2>
+      <div class="candidate-list" id="admin-candidate-list"></div>
+
+      <form id="admin-candidate-form" class="stack-form">
+        <label for="admin-candidate-name">Candidate name</label>
+        <input id="admin-candidate-name" name="name" type="text" maxlength="120" required>
+
+        <label for="admin-candidate-description">Description</label>
+        <textarea id="admin-candidate-description" name="description" rows="3"></textarea>
+
+        <button class="button primary" type="submit">Add candidate</button>
+        <p class="form-message" data-form-message></p>
+      </form>
+
+      <form id="admin-candidate-import-form" class="stack-form">
+        <label for="admin-candidate-csv">Import candidate CSV</label>
+        <input class="file-input" id="admin-candidate-csv" name="file" type="file" accept=".csv,text/csv">
+        <button class="button ghost" type="submit">Import CSV</button>
+        <p class="form-message" data-form-message></p>
+      </form>
+    </article>
+
+    <article id="admin-token-section">
+      <h2>Tokens</h2>
+      <form id="admin-token-form" class="stack-form">
+        <label for="admin-token-count">Token count</label>
+        <input id="admin-token-count" name="count" type="number" min="1" max="1000" value="10" required>
+
+        <label for="admin-token-label-prefix">Label prefix</label>
+        <input id="admin-token-label-prefix" name="label_prefix" type="text" maxlength="80" placeholder="e.g. demo">
+
+        <div class="form-actions">
+          <button class="button primary" type="submit">Generate JSON</button>
+          <button class="button ghost" type="button" data-admin-action="generate-tokens-csv">Download CSV</button>
+        </div>
+        <p class="form-message" data-form-message></p>
+      </form>
+
+      <textarea
+        class="token-output"
+        id="admin-token-output"
+        rows="10"
+        readonly
+        spellcheck="false"
+        placeholder="Generated JSON packages will appear here."
+      ></textarea>
+    </article>
+
+    <article>
+      <h2>Results</h2>
+      <div id="admin-results-panel" class="empty-state">
+        Select "Results" to load election results.
+      </div>
+    </article>
+  </div>
+</section>
+{% endblock %}

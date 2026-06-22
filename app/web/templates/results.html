@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Results - ZKP Voting Simulator{% endblock %}
+{% block content %}
+<section class="split-layout">
+  <aside class="panel">
+    <p class="eyebrow">Publiczne</p>
+    <h1>Results</h1>
+    <div class="side-list">
+      {% for election in closed_elections %}
+        <a href="/results/{{ election.id }}"
+           class="{% if selected_results and selected_results.election_id == election.id %}active{% endif %}">
+          {{ election.name }}
+        </a>
+      {% else %}
+        <p class="muted">No closed elections.</p>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="panel">
+    {% if selected_results %}
+      <p class="eyebrow">Podsumowanie</p>
+      <h2>{{ selected_results.election_name }}</h2>
+      <div class="stats-row">
+        <div>
+          <span class="metric">{{ selected_results.total_votes }}</span>
+          <span>votes</span>
+        </div>
+        <div>
+          <span class="metric">{{ selected_results.total_tokens }}</span>
+          <span>tokens</span>
+        </div>
+        <div>
+          <span class="metric">{{ "%.1f"|format(selected_results.turnout * 100) }}%</span>
+          <span>frekwencji</span>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Votes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in selected_results.results %}
+            <tr>
+              <td>{{ result.candidate_name }}</td>
+              <td>{{ result.votes }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <a class="button ghost" href="/api/elections/{{ selected_results.election_id }}/results/csv">CSV</a>
+    {% else %}
+      <div class="empty-state">
+        <h2>Select a closed election</h2>
+        <p>Closed elections appear on the left.</p>
+      </div>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

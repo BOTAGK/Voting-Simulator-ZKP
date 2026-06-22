@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Admin login - ZKP Voting Simulator{% endblock %}
+{% block content %}
+<section class="auth-layout">
+  <article class="panel auth-panel">
+    <p class="eyebrow">Administrator</p>
+    <h1>Admin login</h1>
+    <form id="admin-login-form" class="stack-form">
+      <label for="username">Login</label>
+      <input id="username" name="username" type="text" autocomplete="username" required>
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+      <button class="button primary" type="submit">Log in</button>
+      <p class="form-message" data-form-message></p>
+    </form>
+  </article>
+</section>
+{% endblock %}

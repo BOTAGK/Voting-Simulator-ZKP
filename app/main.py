@@ -5,12 +5,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.voting import router as voting_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.admin import router as admin_router
 from app.api.routes.health import router as health_router
 from app.api.routes.results import router as results_router
+from app.web.routes import router as web_router
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.exception_handlers import register_exception_handlers
@@ -41,6 +43,8 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
+    app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
+    app.include_router(web_router)
     app.include_router(voting_router, prefix="/api")
     app.include_router(results_router, prefix="/api")
     app.include_router(auth_router, prefix="/api")
