@@ -1,38 +1,12 @@
 ﻿"""Integration tests for the election API workflow."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Election
-
-
-ElectionPayload = dict[str, Any]
-
-
-def valid_election_payload(name: str = "Test election") -> ElectionPayload:
-    
-    now = datetime.now(timezone.utc)
-    starts_at = now + timedelta(days=1)
-    ends_at = starts_at + timedelta(hours=12)
-    return {
-        "name": name,
-        "description": "Election created by an integration test.",
-        "starts_at": starts_at.isoformat(),
-        "ends_at": ends_at.isoformat(),
-    }
-
-
-def create_election(client: TestClient, name: str = "Test election") -> dict[str, Any]:
-    response = client.post(
-        "/api/admin/elections",
-        json=valid_election_payload(name),
-    )
-
-    assert response.status_code == 201
-    return response.json()
+from tests.helpers import create_election, valid_election_payload
 
 
 def test_create_election_persists_in_sqlite(
@@ -139,6 +113,34 @@ def test_close_active_election(admin_client: TestClient) -> None:
     assert close_response.json()["status"] == "closed"
 
 
+def test_cancel_draft_election(admin_client: TestClient) -> None:
+    created = create_election(admin_client)
+
+    response = admin_client.post(
+        f"/api/admin/elections/{created['id']}/cancel"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "closed"
+
+
+def test_cannot_cancel_active_election(admin_client: TestClient) -> None:
+    created = create_election(admin_client)
+    open_response = admin_client.post(
+        f"/api/admin/elections/{created['id']}/open"
+    )
+    assert open_response.status_code == 200
+
+    response = admin_client.post(
+        f"/api/admin/elections/{created['id']}/cancel"
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Only draft election can be cancelled."
+    }
+
+
 def test_cannot_update_active_election(admin_client: TestClient) -> None:
     created = create_election(admin_client)
     open_response = admin_client.post(
@@ -151,7 +153,7 @@ def test_cannot_update_active_election(admin_client: TestClient) -> None:
         json={"name": "Forbidden update"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {
         "detail": "Only draft elections can be updated."
     }
@@ -164,7 +166,7 @@ def test_cannot_close_draft_election(admin_client: TestClient) -> None:
         f"/api/admin/elections/{created['id']}/close"
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {
         "detail": "Only active election can be closed."
     }
@@ -182,3 +184,79 @@ def test_delete_draft_election(admin_client: TestClient) -> None:
 
     get_response = admin_client.get(f"/api/admin/elections/{created['id']}")
     assert get_response.status_code == 404
+
+
+def test_delete_active_election(admin_client: TestClient) -> None:
+    created = create_election(admin_client)
+    open_response = admin_client.post(
+        f"/api/admin/elections/{created['id']}/open"
+    )
+    assert open_response.status_code == 200
+
+    delete_response = admin_client.delete(
+        f"/api/admin/elections/{created['id']}"
+    )
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+
+    get_response = admin_client.get(f"/api/admin/elections/{created['id']}")
+    assert get_response.status_code == 404
+
+
+def test_delete_closed_election(admin_client: TestClient) -> None:
+    created = create_election(admin_client)
+    open_response = admin_client.post(
+        f"/api/admin/elections/{created['id']}/open"
+    )
+    assert open_response.status_code == 200
+    close_response = admin_client.post(
+        f"/api/admin/elections/{created['id']}/close"
+    )
+    assert close_response.status_code == 200
+
+    delete_response = admin_client.delete(
+        f"/api/admin/elections/{created['id']}"
+    )
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+
+    get_response = admin_client.get(f"/api/admin/elections/{created['id']}")
+    assert get_response.status_code == 404
+
+
+def test_cannot_open_election_before_start_date(admin_client: TestClient) -> None:
+    now = datetime.now(timezone.utc)
+    payload = valid_election_payload("Future election")
+    payload["starts_at"] = (now + timedelta(days=1)).isoformat()
+    payload["ends_at"] = (now + timedelta(days=2)).isoformat()
+    created_response = admin_client.post("/api/admin/elections", json=payload)
+    assert created_response.status_code == 201
+
+    response = admin_client.post(
+        f"/api/admin/elections/{created_response.json()['id']}/open"
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Election can only be active between its start and end dates."
+    }
+
+
+def test_cannot_open_election_after_end_date(admin_client: TestClient) -> None:
+    now = datetime.now(timezone.utc)
+    payload = valid_election_payload("Expired election")
+    payload["starts_at"] = (now - timedelta(days=2)).isoformat()
+    payload["ends_at"] = (now - timedelta(days=1)).isoformat()
+    created_response = admin_client.post("/api/admin/elections", json=payload)
+    assert created_response.status_code == 201
+
+    response = admin_client.post(
+        f"/api/admin/elections/{created_response.json()['id']}/open"
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Election can only be active between its start and end dates."
+    }

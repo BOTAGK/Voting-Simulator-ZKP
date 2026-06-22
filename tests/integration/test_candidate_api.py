@@ -1,27 +1,10 @@
 """Integration tests for the candidate API workflow."""
 
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi.testclient import TestClient
 
-
-def create_election(client: TestClient, name: str = "Test election") -> dict[str, Any]:
-    starts_at = datetime.now(timezone.utc) + timedelta(days=1)
-    ends_at = starts_at + timedelta(hours=12)
-
-    response = client.post(
-        "/api/admin/elections",
-        json={
-            "name": name,
-            "description": "Election used by candidate tests.",
-            "starts_at": starts_at.isoformat(),
-            "ends_at": ends_at.isoformat(),
-        },
-    )
-
-    assert response.status_code == 201
-    return response.json()
+from tests.helpers import create_election
 
 
 def create_candidate(
@@ -66,6 +49,78 @@ def test_list_candidates_for_election(admin_client: TestClient) -> None:
         "First candidate",
         "Second candidate",
     ]
+
+
+def test_import_candidates_from_csv(admin_client: TestClient) -> None:
+    election = create_election(admin_client)
+
+    response = admin_client.post(
+        f"/api/admin/elections/{election['id']}/candidates/import",
+        files={
+            "file": (
+                "candidates.csv",
+                b"name,description\nFirst candidate,First description\nSecond candidate,\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    candidates = response.json()
+    assert [candidate["name"] for candidate in candidates] == [
+        "First candidate",
+        "Second candidate",
+    ]
+    assert candidates[0]["description"] == "First description"
+    assert candidates[1]["description"] is None
+
+
+def test_import_candidates_from_csv_rejects_invalid_file(
+    admin_client: TestClient,
+) -> None:
+    election = create_election(admin_client)
+
+    response = admin_client.post(
+        f"/api/admin/elections/{election['id']}/candidates/import",
+        files={
+            "file": (
+                "candidates.csv",
+                b"description\nMissing name column\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "CSV file is missing required columns: 'name'."
+    }
+
+
+def test_import_candidates_from_csv_rejects_active_election(
+    admin_client: TestClient,
+) -> None:
+    election = create_election(admin_client)
+    open_response = admin_client.post(
+        f"/api/admin/elections/{election['id']}/open"
+    )
+    assert open_response.status_code == 200
+
+    response = admin_client.post(
+        f"/api/admin/elections/{election['id']}/candidates/import",
+        files={
+            "file": (
+                "candidates.csv",
+                b"name,description\nForbidden candidate,\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Candidates can only be added to draft elections."
+    }
 
 
 def test_get_candidate_for_election(admin_client: TestClient) -> None:
@@ -129,7 +184,7 @@ def test_cannot_add_candidate_to_active_election(
         json={"name": "Forbidden candidate"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {
         "detail": "Candidates can only be added to draft elections."
     }

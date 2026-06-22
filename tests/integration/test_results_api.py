@@ -1,7 +1,11 @@
+import csv
+from io import StringIO
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models import Candidate, Election, ElectionStatus, Vote, VoterToken
+from app.utils.csv import CSV_EXPORT_DELIMITER
 
 
 def create_election(
@@ -115,6 +119,56 @@ def test_public_results_returns_closed_election_results(
     ]
 
 
+def test_public_results_csv_returns_closed_election_results(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    election = create_election(db_session, ElectionStatus.CLOSED)
+    first_candidate = create_candidate(db_session, election.id, "First candidate")
+    second_candidate = create_candidate(db_session, election.id, "Second candidate")
+    create_vote(db_session, election.id, first_candidate.id, "nullifier-1")
+    create_vote(db_session, election.id, second_candidate.id, "nullifier-2")
+    create_vote(db_session, election.id, second_candidate.id, "nullifier-3")
+    create_voter_token(db_session, election.id, "token-1", 0)
+    create_voter_token(db_session, election.id, "token-2", 1)
+    create_voter_token(db_session, election.id, "token-3", 2)
+
+    response = client.get(f"/api/elections/{election.id}/results/csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert (
+        response.headers["content-disposition"]
+        == f'attachment; filename="election-{election.id}-results.csv"'
+    )
+
+    rows = list(csv.DictReader(StringIO(response.text), delimiter=CSV_EXPORT_DELIMITER))
+    assert rows == [
+        {
+            "election_id": str(election.id),
+            "election_name": election.name,
+            "status": ElectionStatus.CLOSED.value,
+            "total_votes": "3",
+            "total_tokens": "3",
+            "turnout": "1.0",
+            "candidate_id": str(first_candidate.id),
+            "candidate_name": first_candidate.name,
+            "votes": "1",
+        },
+        {
+            "election_id": str(election.id),
+            "election_name": election.name,
+            "status": ElectionStatus.CLOSED.value,
+            "total_votes": "3",
+            "total_tokens": "3",
+            "turnout": "1.0",
+            "candidate_id": str(second_candidate.id),
+            "candidate_name": second_candidate.name,
+            "votes": "2",
+        },
+    ]
+
+
 def test_public_results_rejects_active_election(
     client: TestClient,
     db_session: Session,
@@ -122,6 +176,17 @@ def test_public_results_rejects_active_election(
     election = create_election(db_session, ElectionStatus.ACTIVE)
 
     response = client.get(f"/api/elections/{election.id}/results")
+
+    assert response.status_code == 404
+
+
+def test_public_results_csv_rejects_active_election(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    election = create_election(db_session, ElectionStatus.ACTIVE)
+
+    response = client.get(f"/api/elections/{election.id}/results/csv")
 
     assert response.status_code == 404
 
@@ -145,3 +210,34 @@ def test_admin_results_returns_active_election_results_with_turnout(
     assert body["total_votes"] == 1
     assert body["total_tokens"] == 2
     assert body["turnout"] == 0.5
+
+
+def test_admin_results_csv_returns_active_election_results(
+    admin_client: TestClient,
+    db_session: Session,
+) -> None:
+    election = create_election(db_session, ElectionStatus.ACTIVE)
+    candidate = create_candidate(db_session, election.id, "Candidate")
+    create_vote(db_session, election.id, candidate.id, "nullifier-1")
+    create_voter_token(db_session, election.id, "token-1", 0)
+    create_voter_token(db_session, election.id, "token-2", 1)
+
+    response = admin_client.get(f"/api/admin/elections/{election.id}/results/csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+
+    rows = list(csv.DictReader(StringIO(response.text), delimiter=CSV_EXPORT_DELIMITER))
+    assert rows == [
+        {
+            "election_id": str(election.id),
+            "election_name": election.name,
+            "status": ElectionStatus.ACTIVE.value,
+            "total_votes": "1",
+            "total_tokens": "2",
+            "turnout": "0.5",
+            "candidate_id": str(candidate.id),
+            "candidate_name": candidate.name,
+            "votes": "1",
+        }
+    ]

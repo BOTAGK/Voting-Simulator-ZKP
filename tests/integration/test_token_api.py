@@ -1,57 +1,19 @@
 """Integration tests for administrator voter token API."""
 
+import csv
 import json
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from io import StringIO
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Election, VoterToken
+from app.utils.csv import CSV_EXPORT_DELIMITER
+from tests.helpers import create_election, generate_tokens
 
 
 pytestmark = pytest.mark.usefixtures("fast_token_generation")
-
-
-def valid_election_payload(name: str = "Token API election") -> dict[str, Any]:
-    starts_at = datetime.now(timezone.utc) + timedelta(days=1)
-    ends_at = starts_at + timedelta(hours=12)
-
-    return {
-        "name": name,
-        "description": "Election used by token API tests.",
-        "starts_at": starts_at.isoformat(),
-        "ends_at": ends_at.isoformat(),
-    }
-
-
-def create_election(client: TestClient, name: str = "Token API election") -> dict[str, Any]:
-    response = client.post(
-        "/api/admin/elections",
-        json=valid_election_payload(name),
-    )
-
-    assert response.status_code == 201
-    return response.json()
-
-
-def generate_tokens(
-    client: TestClient,
-    election_id: int,
-    count: int = 2,
-    label_prefix: str | None = "voter",
-) -> list[dict[str, Any]]:
-    response = client.post(
-        f"/api/admin/elections/{election_id}/tokens/generate",
-        json={
-            "count": count,
-            "label_prefix": label_prefix,
-        },
-    )
-
-    assert response.status_code == 201
-    return response.json()
 
 
 def test_admin_can_generate_voter_tokens(admin_client: TestClient) -> None:
@@ -72,6 +34,47 @@ def test_admin_can_generate_voter_tokens(admin_client: TestClient) -> None:
     }
     assert packages[1]["token_secret"] == "102"
     assert packages[1]["merkle_index"] == 1
+
+
+def test_admin_can_generate_voter_tokens_as_csv(
+    admin_client: TestClient,
+) -> None:
+    election = create_election(admin_client)
+
+    response = admin_client.post(
+        f"/api/admin/elections/{election['id']}/tokens/generate/csv",
+        json={
+            "count": 2,
+            "label_prefix": "voter",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.headers["content-type"].startswith("text/csv")
+    assert (
+        response.headers["content-disposition"]
+        == f'attachment; filename="election-{election["id"]}-voter-tokens.csv"'
+    )
+
+    rows = list(csv.DictReader(StringIO(response.text), delimiter=CSV_EXPORT_DELIMITER))
+    assert rows == [
+        {
+            "election_id": str(election["id"]),
+            "token_secret": "101",
+            "merkle_root": "999999",
+            "merkle_index": "0",
+            "merkle_siblings": json.dumps(["10000", "20000"]),
+            "merkle_path_indices": json.dumps([0, 1]),
+        },
+        {
+            "election_id": str(election["id"]),
+            "token_secret": "102",
+            "merkle_root": "999999",
+            "merkle_index": "1",
+            "merkle_siblings": json.dumps(["10001", "20001"]),
+            "merkle_path_indices": json.dumps([0, 1]),
+        },
+    ]
 
 
 def test_generate_voter_tokens_requires_admin_session(client: TestClient) -> None:
@@ -134,7 +137,7 @@ def test_generate_voter_tokens_rejects_second_generation(
         },
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {
         "detail": "Voter tokens have already been generated for this election."
     }
@@ -155,7 +158,7 @@ def test_generate_voter_tokens_rejects_active_election(
         },
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {
         "detail": "Voter tokens can only be generated for draft elections."
     }
