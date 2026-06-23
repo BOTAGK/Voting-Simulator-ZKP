@@ -22,11 +22,11 @@
         <dl class="meta-list">
           <div>
             <dt>Start</dt>
-            <dd>{{ election.starts_at or "not set" }}</dd>
+            <dd data-local-datetime="{{ election.starts_at.isoformat() if election.starts_at else '' }}">{{ election.starts_at or "not set" }}</dd>
           </div>
           <div>
             <dt>End</dt>
-            <dd>{{ election.ends_at or "not set" }}</dd>
+            <dd data-local-datetime="{{ election.ends_at.isoformat() if election.ends_at else '' }}">{{ election.ends_at or "not set" }}</dd>
           </div>
         </dl>
         <a class="button primary" href="/elections/{{ election.id }}">Open</a>

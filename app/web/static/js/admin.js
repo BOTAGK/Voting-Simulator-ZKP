@@ -1,5 +1,6 @@
 import {
   downloadTextFile,
+  formatLocalDateTime,
   readJsonResponse,
   setElementMessage,
   setMessage,
@@ -62,8 +63,10 @@ function updateAdminElectionRow(election) {
 
   row.children[0].textContent = election.name;
   row.children[1].innerHTML = `<span class="status-pill">${election.status}</span>`;
-  row.children[2].textContent = election.starts_at || "not set";
-  row.children[3].textContent = election.ends_at || "not set";
+  row.children[2].dataset.localDatetime = election.starts_at || "";
+  row.children[2].textContent = formatLocalDateTime(election.starts_at);
+  row.children[3].dataset.localDatetime = election.ends_at || "";
+  row.children[3].textContent = formatLocalDateTime(election.ends_at);
 }
 
 function updateAdminActionStates(status) {

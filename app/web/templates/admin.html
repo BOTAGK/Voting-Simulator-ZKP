@@ -47,8 +47,8 @@
           <tr data-election-row="{{ election.id }}">
             <td>{{ election.name }}</td>
             <td><span class="status-pill">{{ election.status.value }}</span></td>
-            <td>{{ election.starts_at or "not set" }}</td>
-            <td>{{ election.ends_at or "not set" }}</td>
+            <td data-local-datetime="{{ election.starts_at.isoformat() if election.starts_at else '' }}">{{ election.starts_at or "not set" }}</td>
+            <td data-local-datetime="{{ election.ends_at.isoformat() if election.ends_at else '' }}">{{ election.ends_at or "not set" }}</td>
             <td>
               <button
                 class="button ghost compact"
