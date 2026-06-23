@@ -296,21 +296,37 @@ Admin tokens and results:
 | `GET` | `/api/admin/elections/{election_id}/results` | Read results for any election. |
 | `GET` | `/api/admin/elections/{election_id}/results/csv` | Export results CSV for any election. |
 
-Example administrator login:
+Example administrator login in PowerShell:
 
 ```powershell
 curl.exe -X POST "http://127.0.0.1:8000/api/auth/login" `
   -H "Content-Type: application/json" `
-  -d "{\"username\":\"admin\",\"password\":\"change-this-password\"}" `
+  -d '{"username":"admin","password":"change-this-password"}' `
   -c cookies.txt
 ```
 
-Example create election:
+Example create election in PowerShell:
 
 ```powershell
 curl.exe -X POST "http://127.0.0.1:8000/api/admin/elections" `
   -H "Content-Type: application/json" `
   -b cookies.txt `
+  -d '{"name":"Demo election","description":"Created from curl"}'
+```
+
+The same calls in Windows CMD:
+
+```cmd
+curl.exe -X POST "http://127.0.0.1:8000/api/auth/login" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\":\"admin\",\"password\":\"change-this-password\"}" ^
+  -c cookies.txt
+```
+
+```cmd
+curl.exe -X POST "http://127.0.0.1:8000/api/admin/elections" ^
+  -H "Content-Type: application/json" ^
+  -b cookies.txt ^
   -d "{\"name\":\"Demo election\",\"description\":\"Created from curl\"}"
 ```
 
