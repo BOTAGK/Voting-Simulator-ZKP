@@ -1,4 +1,4 @@
-﻿from secrets import compare_digest
+from secrets import compare_digest
 
 from fastapi import Request
 

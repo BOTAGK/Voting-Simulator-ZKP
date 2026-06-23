@@ -1,4 +1,4 @@
-﻿"""Integration tests for the election API workflow."""
+"""Integration tests for the election API workflow."""
 
 from datetime import datetime, timedelta, timezone
 

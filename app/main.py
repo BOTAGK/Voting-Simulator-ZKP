@@ -1,4 +1,4 @@
-﻿"""Application entrypoint."""
+"""Application entrypoint."""
 
 from starlette.middleware.sessions import SessionMiddleware
 from collections.abc import AsyncIterator

@@ -1,4 +1,4 @@
-﻿"""HTTP handlers for domain-level application exceptions."""
+"""HTTP handlers for domain-level application exceptions."""
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse

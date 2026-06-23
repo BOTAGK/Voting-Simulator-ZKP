@@ -1,1 +1,1 @@
-﻿"""Authentication and authorization package."""
+"""Authentication and authorization package."""

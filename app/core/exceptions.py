@@ -1,4 +1,4 @@
-﻿class AppError(Exception):
+class AppError(Exception):
     """Base class for domain-level application errors."""
 
 

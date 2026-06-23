@@ -1,4 +1,4 @@
-﻿from typing import Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse

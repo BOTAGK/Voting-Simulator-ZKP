@@ -1,1 +1,1 @@
-﻿"""Core application utilities shared by API and web layers."""
+"""Core application utilities shared by API and web layers."""

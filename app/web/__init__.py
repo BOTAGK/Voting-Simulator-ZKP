@@ -1,1 +1,1 @@
-﻿"""Web UI package."""
+"""Web UI package."""

@@ -1,4 +1,4 @@
-﻿
+
 from fastapi import APIRouter, Depends, File, Response, UploadFile, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session

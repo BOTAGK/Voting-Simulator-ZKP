@@ -1,1 +1,1 @@
-﻿"""ZKP voting simulator application package."""
+"""ZKP voting simulator application package."""

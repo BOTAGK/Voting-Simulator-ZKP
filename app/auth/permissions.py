@@ -1,4 +1,4 @@
-﻿from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 
 from app.auth.session import is_admin_authenticated
 from app.core.config import get_settings

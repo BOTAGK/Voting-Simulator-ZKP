@@ -1,4 +1,4 @@
-﻿"""Reusable FastAPI dependencies."""
+"""Reusable FastAPI dependencies."""
 
 from collections.abc import Generator
 

@@ -1,4 +1,4 @@
-﻿"""Application configuration."""
+"""Application configuration."""
 
 from functools import lru_cache
 
