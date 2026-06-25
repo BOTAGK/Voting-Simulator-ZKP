@@ -3,7 +3,7 @@
 {% block content %}
 <section class="split-layout">
   <aside class="panel">
-    <p class="eyebrow">Publiczne</p>
+    <p class="eyebrow">Public</p>
     <h1>Results</h1>
     <div class="side-list">
       {% for election in closed_elections %}
@@ -19,7 +19,7 @@
 
   <section class="panel">
     {% if selected_results %}
-      <p class="eyebrow">Podsumowanie</p>
+      <p class="eyebrow">Summary</p>
       <h2>{{ selected_results.election_name }}</h2>
       <div class="stats-row">
         <div>
@@ -32,7 +32,7 @@
         </div>
         <div>
           <span class="metric">{{ "%.1f"|format(selected_results.turnout * 100) }}%</span>
-          <span>frekwencji</span>
+          <span>turnout</span>
         </div>
       </div>
       <table class="data-table">

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, File, Response, UploadFile, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
@@ -14,15 +13,20 @@ from app.schemas.voter_token import (
     VoterTokenPackage,
     VoterTokenRead,
 )
-from app.services import election_service, candidate_service, tally_service, token_service
+from app.services import (
+    candidate_service,
+    election_service,
+    tally_service,
+    token_service,
+)
 from app.utils.csv import build_election_results_csv, build_voter_token_packages_csv
-
 
 router = APIRouter(
     prefix="/admin/elections",
     tags=["admin elections"],
     dependencies=[Depends(require_admin)],
 )
+
 
 @router.post(
     "",
@@ -35,14 +39,16 @@ def create_election(
 ) -> Election:
     return election_service.create_new_election(db, data)
 
+
 @router.get(
     "",
     response_model=list[ElectionRead],
-) 
+)
 def list_elections(
     db: Session = Depends(get_db),
 ) -> list[Election]:
     return election_service.list_all_elections(db)
+
 
 @router.get(
     "/{election_id}",
@@ -53,6 +59,7 @@ def get_election(
     db: Session = Depends(get_db),
 ) -> Election:
     return election_service.get_election_details(db, election_id)
+
 
 @router.patch(
     "/{election_id}",
@@ -65,6 +72,7 @@ def update_election(
 ) -> Election:
     return election_service.update_existing_election(db, election_id, data)
 
+
 @router.post(
     "/{election_id}/open",
     response_model=ElectionRead,
@@ -74,6 +82,7 @@ def open_election(
     db: Session = Depends(get_db),
 ) -> Election:
     return election_service.open_election(db, election_id)
+
 
 @router.post(
     "/{election_id}/close",
@@ -85,6 +94,7 @@ def close_election(
 ) -> Election:
     return election_service.close_election(db, election_id)
 
+
 @router.post(
     "/{election_id}/cancel",
     response_model=ElectionRead,
@@ -94,6 +104,7 @@ def cancel_election(
     db: Session = Depends(get_db),
 ) -> Election:
     return election_service.cancel_draft_election(db, election_id)
+
 
 @router.delete(
     "/{election_id}",
@@ -106,17 +117,19 @@ def delete_election(
     election_service.delete_existing_election(db, election_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
 @router.post(
     "/{election_id}/candidates",
     response_model=CandidateRead,
     status_code=status.HTTP_201_CREATED,
-) 
+)
 def add_candidate_to_election(
     election_id: int,
     data: CandidateCreate,
     db: Session = Depends(get_db),
 ) -> Candidate:
     return candidate_service.add_candidate_to_election(db, election_id, data)
+
 
 @router.get(
     "/{election_id}/candidates",
@@ -157,6 +170,7 @@ def get_candidate_for_election(
 ) -> Candidate:
     return candidate_service.get_candidate_details(db, election_id, candidate_id)
 
+
 @router.patch(
     "/{election_id}/candidates/{candidate_id}",
     response_model=CandidateRead,
@@ -169,6 +183,7 @@ def update_candidate_for_election(
 ) -> Candidate:
     return candidate_service.update_candidate(db, election_id, candidate_id, data)
 
+
 @router.delete(
     "/{election_id}/candidates/{candidate_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -180,6 +195,7 @@ def delete_candidate_for_election(
 ) -> Response:
     candidate_service.delete_candidate(db, election_id, candidate_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.post(
     "/{election_id}/tokens/generate",
@@ -217,6 +233,7 @@ def generate_voter_tokens_csv_for_election(
             ),
         },
     )
+
 
 @router.get(
     "/{election_id}/tokens",
